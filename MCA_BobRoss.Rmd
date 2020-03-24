@@ -1,0 +1,212 @@
+---
+title: "Bob Ross Paintings"
+author: "Mikolaj Wieczorek"
+date: "10/26/2019"
+output:
+  md_document:
+    variant: markdown_github
+    
+    
+---
+
+# Multiple Correspondence Analysis 
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+library(MASS)
+library(ca)
+```
+```{r}
+paintings = read.csv("BobRossCommon.csv")
+names(paintings)
+```
+
+Each <b>row</b> corresponds to a painting. The <b>columns</b> consist of the name of the painting followed by columns (1/0) for each of the possible major features of these paintings, where 1 = present and 0 = absent.
+
+```{r fig.height=15, fig.width=15}
+#Set row names/numbers to correspond to TITLE rows
+par(mfrow=c(3,2))
+row.names(paintings) = paintings$TITLE
+pt.mat = paintings[,-1]
+pt.mat = apply(pt.mat,2,as.factor)
+pt.MCA = MCA(pt.mat)
+
+```
+MCA factor maps above show the point cloud of paintings in their feature selection. To understand it, we need to consider the distance between them. 
+
+## Multiple Correspondence Analysis 
+
+We are going to use multiple correpondence analysis (MCA) to analyze the thematic structure of the 316 paintings in this data base.  
+
+We will construct plots showing individuals, variables, and both individuals & variables. We will use the “cos2” measure of quality of representation to color code the individual painting and use the “contrib” measure of importance to color code the variables.
+
+```{r fig.height=15, fig.width=15}
+plot(pt.MCA, invisible = "var")
+```
+
+### Exploring the variance explained for our MCA dimensions
+J = 26,  as we have 26 different categories/features that Bob's paintings can have, each has 2 levels
+k=52 levels (=26*2),
+
+The first dimension explains about 12.375% of variation:
+```{r}
+summary(pt.MCA)
+```
+<br> And the average variance explained (inertia) for all dimensions is 1/J = 1/26.
+```{r}
+options(digits = 2)
+1/26
+```
+So any dimension with % of variance over 3.8% could be interpreted in our MCA. So based on our summary(pr.MCA) above or our scree plot below, we should retain 11 dimensions.
+
+```{r fig.height=10, fig.width=10}
+fviz_screeplot(pt.MCA, addlabels = TRUE, ylim = c(0, 45))
+```
+
+<br>
+</br>
+
+Now, we're going to construct plots showing individuals, variables (product ratings), and both individuals & variables. We will use the “cos2” measure of quality of representation to color code the individual painting and the “contrib” measure of importance to color code the variables.   
+
+We are going to construct MCA plot using SVD components. To label levels of categorical columns, we have to extract column labels from different component of the MCA results (pt.MCA):
+```{r}
+pt.SVD = pt.MCA$svd
+attributes(pt.SVD)
+```
+
+```{r}
+delta2 = pt.SVD$vs
+V2 = pt.SVD$V
+U2 = pt.SVD$U
+```
+
+
+```{r}
+plot(delta2[1]*V2[,1], delta2[2]*V2[,2], type = "n", xlim = c(-1.1,1.1), ylim = c(-1.1,1.1),
+     xlab = "Dimension 1", ylab = "Dimension 2", main = "Construction of MCA Plot Using SVD Components")
+text(delta2[1]*V2[,1], delta2[2]*V2[,2], labels = row.names(pt.MCA$var$coord), cex = 0.4,
+     col = "black")
+abline(h=0, v=0, lty = 2, col = "red")
+points(delta2[1]*U2[,1], delta2[2]*U2[,2], pch = ".", col = "blue", cex = 2.5)
+```
+
+
+```{r eval=FALSE, include=FALSE}
+require(rgl)
+plot3d(pt.MCA$var$coord[,1:3], type = "n")
+text3d(pt.MCA$var$coord[,1:3], texts = row.names(pt.MCA$var$coord), col = "blue", cex = 0.4, select = "contrib 10")
+```
+
+
+### Construct plots showing variables (features):
+```{r fig.height=10, fig.width=10}
+plot(pt.MCA, invisible = "ind", cex = 0.8)
+```
+
+Using the “cos2” measure of quality of representation to color code variables:
+
+```{r fig.height=10, fig.width=10}
+fviz_mca_var(pt.MCA, repel = F, col.var = "cos2")
+```
+
+Using the “contrib” measure of importance to color code the variables:
+```{r fig.height=10, fig.width=10}
+fviz_mca_var(pt.MCA, repel = F, col.var = "contrib")
+```
+<br></br>
+
+Contribution or quality of representation Cos2 of variables and individuals can be organized graphically as below, from highest to lowest <b>contribution of variables</b> to Dimension 1 in this case.
+```{r fig.height=10, fig.width=10}
+fviz_contrib(pt.MCA, choice = "var", cex =0.2)
+```
+
+Selecting only 8 features whose contribution was the highest:
+```{r fig.height=10, fig.width=10}
+fviz_mca_var(pt.MCA, repel = T, select.var = list(contrib = 8))
+```
+
+Selecting only 8 features whose quality of representaiton was the highest:
+
+If cos2 is in [0,1], ex: 0.6, then individuals/variables with a cos>0.6 are shown. If cos2>1, ex:5, then the top 8 individuals/variables with the highest cos2 are shown.
+```{r fig.height=10, fig.width=10}
+fviz_mca_var(pt.MCA, repel = T, select.var = list(cos2 = 8))
+```
+
+If a variable category is well represented by two dimensions, the sum of the cos2 is closed to one.
+
+```{r eval=FALSE, include=FALSE}
+var2 = get_mca_var(pt.MCA)
+options(digits = 2)
+head(var$cos2, 5)
+```
+
+
+### Construct plots showing individuals (paintings):
+
+```{r fig.height=10, fig.width=10}
+plot(pt.MCA, invisible = "var", cex = 0.5)
+```
+
+Using the “cos2” measure of quality of representation to color code individuals:
+```{r fig.height=10, fig.width=10}
+fviz_mca_ind(pt.MCA, repel = F, col.ind = "cos2")
+```
+
+Using the “contrib” measure of importance to color code the individuals:
+```{r fig.height=10, fig.width=10}
+fviz_mca_ind(pt.MCA, repel = F, col.ind = "contrib")
+```
+
+Contribution or quality of representation Cos2 of variables and individuals can be organized graphically as below, from highest to lowest <b>contribution of individuals</b> to Dimension 1 in this case (as it is difficult to read text on x-axis, we will use color intensity representation above:
+```{r fig.height=10, fig.width=10}
+fviz_contrib(pt.MCA, choice = "ind", cex =0.1)
+```
+
+Selecting only 8 painitngs whose contribution was the highest:
+```{r fig.height=10, fig.width=10}
+fviz_mca_ind(pt.MCA, repel = F, select.ind = list(contrib = 8))
+```
+As depicted above, these are the names of Bob's paintings that have the most contribution to the two dimensions.
+
+
+Selecting only 8 paintings whose quality of representaiton was the highest:
+
+If cos2 is in [0,1], ex: 0.6, then individuals/variables with a cos>0.6 are shown. If cos2>1, ex:5, then the top 5 individuals/variables with the highest cos2 are shown.
+```{r fig.height=10, fig.width=10}
+fviz_mca_ind(pt.MCA, repel = T, select.ind = list(cos2 = 8))
+```
+
+## PART B
+b)	Use plots with the individuals labeled to identify at least four paintings that are in the extreme.
+
+Conclude the above sections on (###Construct plots showing individuals (paintings)):...
+
+## Biplot
+Using a biplot (i.e. plot of both individuals and variables) to name the quadrants to identify groups of paintings that have similar subject matter or similar features.  
+```{r fig.height=15, fig.width=15}
+fviz_mca_biplot(pt.MCA, repel = F, ggtheme = theme_minimal())
+```
+<br>The plot above shows a global pattern within the data. Rows (individuals) are represented by blue points and columns (variable categories) by red triangles.
+
+The distance between any row points or column points gives a measure of their similarity (or dissimilarity). Row points with similar profile are closed on the factor map. The same holds true for column points.
+
+<br>The blue labels are paintings and the red labels are their features with number 1 meaning the feature is present and 0 meaning that it's not. It semms like in Quadrant I there are features such as Fence, Structure, Sun, Fog, and Cabin, and the higher the Dim1 values (to the right) are, we can see a group of winter-representing paintings. With closer to y-axis there is a mix of paintings also depicting Fall season, or an extreme painting like The Old Home Place. In Quandrant II, there are features such as FLowers, River, Deciduous, Path, and Grass. Looking at the individual paintings, they represent warmer days in summer time, with flowers rivers, also in the autumn time and in the woods. In Quandrant III, we can see some groups with similar features as in Quandrant II: Bushes, Cumulus, Waterfall and also Rocks. The paintings here show mountain landscapes, waterfalls, there is more autumn season present here. But also mountain painitngs showing winter season. Quandrant IV has paintings with features such as Cirrus, SnowyMountian, Lake, Snow and Winter (farther to the right). The paintings here are mostly winter paintings. It seems like y-axis contrasts the paintings groups between QI and IV vs QII and III.
+
+</br>
+
+Less messy was the plot of both variables and individuals we constructed using SVD components:
+```{r}
+plot(delta2[1]*V2[,1], delta2[2]*V2[,2], type = "n", xlim = c(-1.1,1.1), ylim = c(-1.1,1.1),
+     xlab = "Dimension 1", ylab = "Dimension 2", main = "Construction of MCA Plot Using SVD Components")
+text(delta2[1]*V2[,1], delta2[2]*V2[,2], labels = row.names(pt.MCA$var$coord), cex = 0.4,
+     col = "black")
+abline(h=0, v=0, lty = 2, col = "red")
+points(delta2[1]*U2[,1], delta2[2]*U2[,2], pch = ".", col = "blue", cex = 2.5)
+```
+
+
+
+
+
+
