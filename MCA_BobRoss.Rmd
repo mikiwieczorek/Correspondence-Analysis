@@ -82,7 +82,7 @@ U2 = pt.SVD$U
 ```
 
 
-```{r}
+```{r fig.height=10, fig.width=10}
 plot(delta2[1]*V2[,1], delta2[2]*V2[,2], type = "n", xlim = c(-1.1,1.1), ylim = c(-1.1,1.1),
      xlab = "Dimension 1", ylab = "Dimension 2", main = "Construction of MCA Plot Using SVD Components")
 text(delta2[1]*V2[,1], delta2[2]*V2[,2], labels = row.names(pt.MCA$var$coord), cex = 0.4,
@@ -177,10 +177,6 @@ If cos2 is in [0,1], ex: 0.6, then individuals/variables with a cos>0.6 are show
 fviz_mca_ind(pt.MCA, repel = T, select.ind = list(cos2 = 8))
 ```
 
-## PART B
-b)	Use plots with the individuals labeled to identify at least four paintings that are in the extreme.
-
-Conclude the above sections on (###Construct plots showing individuals (paintings)):...
 
 ## Biplot
 Using a biplot (i.e. plot of both individuals and variables) to name the quadrants to identify groups of paintings that have similar subject matter or similar features.  
@@ -196,7 +192,7 @@ The distance between any row points or column points gives a measure of their si
 </br>
 
 Less messy was the plot of both variables and individuals we constructed using SVD components:
-```{r}
+```{r fig.height=10, fig.width=10}
 plot(delta2[1]*V2[,1], delta2[2]*V2[,2], type = "n", xlim = c(-1.1,1.1), ylim = c(-1.1,1.1),
      xlab = "Dimension 1", ylab = "Dimension 2", main = "Construction of MCA Plot Using SVD Components")
 text(delta2[1]*V2[,1], delta2[2]*V2[,2], labels = row.names(pt.MCA$var$coord), cex = 0.4,
